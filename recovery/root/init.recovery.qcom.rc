@@ -1,0 +1,5 @@
+# Version minima: solo activa adb al arrancar.
+# El script completo de tu TWRP (servicios de descifrado qseecomd/keymaster/gatekeeper,
+# rutas /sbin y ANDROID_ROOT de Android 9) esta guardado en extras/ para adaptarlo mas adelante.
+on boot
+    setprop sys.usb.config adb

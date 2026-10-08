@@ -22,6 +22,7 @@ TARGET_BOARD_PLATFORM := msmnile
 TARGET_BOOTLOADER_BOARD_NAME := msmnile
 TARGET_NO_BOOTLOADER := true
 TARGET_NO_RADIOIMAGE := true
+TARGET_OTA_ASSERT_DEVICE := gts6l
 
 # --- Kernel y dtbo del recovery STOCK (4.14.190, Android 12, parche 2023-08) ---
 TARGET_PREBUILT_KERNEL := $(DEVICE_PATH)/prebuilt/kernel
@@ -48,6 +49,7 @@ BOARD_KERNEL_CMDLINE += video=vfb:640x400,bpp=32,memsize=3072000
 BOARD_KERNEL_CMDLINE += msm_rtb.filter=0x237 service_locator.enable=1 swiotlb=2048
 BOARD_KERNEL_CMDLINE += androidboot.usbcontroller=a600000.dwc3
 BOARD_KERNEL_CMDLINE += firmware_class.path=/vendor/firmware_mnt/image loop.max_part=7
+BOARD_KERNEL_CMDLINE += nokaslr printk.devkmsg=on androidboot.selinux=permissive
 
 # --- Particiones (estaticas: system / vendor / product, sin super) ---
 # Tamano deducido: la imagen stock mide 82792448 bytes (incluye footer AVB al final).
@@ -59,27 +61,38 @@ BOARD_HAS_LARGE_FILESYSTEM := true
 TARGET_USERIMAGES_USE_EXT4 := true
 TARGET_USERIMAGES_USE_F2FS := true
 TARGET_COPY_OUT_VENDOR := vendor
-TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/recovery.fstab
+TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/recovery/root/etc/recovery.fstab
+
+# --- AVB (como en tu TWRP funcional) ---
+BOARD_AVB_ENABLE := false
+BOARD_BUILD_DISABLED_VBMETAIMAGE := true
 
 # --- Recovery ---
-TARGET_RECOVERY_PIXEL_FORMAT := "RGBX_8888"
+TARGET_RECOVERY_PIXEL_FORMAT := "BGRA_8888"
 BOARD_SUPPRESS_SECURE_ERASE := true
 PLATFORM_VERSION := 16.1.0
 PLATFORM_SECURITY_PATCH := 2099-12-31
 VENDOR_SECURITY_PATCH := 2099-12-31
 
-# --- TWRP ---
+# --- TWRP (valores tomados de tu BoardConfig funcional) ---
+# Tactil sec_touchscreen: X 0-1599, Y 0-2559 => panel vertical 1600x2560.
+# Tu TWRP usa TW_ROTATION := 270; aqui NO se activa a proposito (ver nota abajo).
 TW_THEME := portrait_hdpi
-TW_BRIGHTNESS_PATH := "/sys/class/backlight/panel0-backlight/brightness"
-TW_DEFAULT_BRIGHTNESS := 150
+#TW_ROTATION := 270
+TW_INPUT_BLACKLIST := "hbtp_vm"
 TW_EXCLUDE_DEFAULT_USB_INIT := true
+TW_BRIGHTNESS_PATH := "/sys/class/backlight/panel0-backlight/brightness"
+TW_MAX_BRIGHTNESS := 255
+TW_DEFAULT_BRIGHTNESS := 120
+TW_NO_REBOOT_BOOTLOADER := true
+TW_HAS_DOWNLOAD_MODE := true
+TW_EXCLUDE_TWRPAPP := true
 TW_EXTRA_LANGUAGES := true
 TW_INCLUDE_NTFS_3G := true
 TW_INCLUDE_CRYPTO := true
 TW_INCLUDE_CRYPTO_FBE := true
 TW_NO_SCREEN_BLANK := true
 RECOVERY_SDCARD_ON_DATA := true
-TW_HAS_DOWNLOAD_MODE := true
 
 # --- OrangeFox ---
 FOX_VARIANT := stock
@@ -95,9 +108,4 @@ OF_FBE_METADATA_MOUNT_IGNORE := 1
 OF_DONT_PATCH_ENCRYPTED_DEVICE := 1
 OF_NO_TREBLE_COMPATIBILITY_CHECK := 1
 OF_SCREEN_H := 2560
-OF_STATUS_H := 80
-OF_STATUS_INDENT_LEFT := 48
-OF_STATUS_INDENT_RIGHT := 48
-OF_HIDE_NOTCH := 1
-OF_CLOCK_POS := 1
 OF_QUICK_BACKUP_LIST := /boot;/data;
