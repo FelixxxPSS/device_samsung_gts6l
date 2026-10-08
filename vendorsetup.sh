@@ -1,0 +1,2 @@
+add_lunch_combo twrp_gts6l-eng
+add_lunch_combo twrp_gts6l-userdebug
