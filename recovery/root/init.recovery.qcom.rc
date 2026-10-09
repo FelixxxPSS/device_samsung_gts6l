@@ -1,21 +1,37 @@
 # init.recovery.qcom.rc - gts6l (SM-T865), recovery 12.1
-# 1) symlink /dev/block/bootdevice (sin esto no montan las particiones)
-# 2) servicios de descifrado lanzados desde /vendor (qseecomd, keymaster 4.0, gatekeeper, time_daemon)
-# 3) adb al arrancar
-# hwservicemanager / servicemanager / keystore2 ya los define el propio sistema del recovery.
+# Reproduce la cadena de arranque de descifrado de tu sistema Android 12 (datos de tu /vendor):
+#   qseecomd -> keymaster 4.0 (HIDL) + gatekeeper 1.0 + time_daemon -> keystore2
+# keystore2 (de AOSP) se reintenta solo cada 5 s, asi que arranca cuando ya existan los HAL.
 
 on fs
+    # --- particiones: symlink bootdevice ---
     wait /dev/block/platform/soc/${ro.boot.bootdevice}
     symlink /dev/block/platform/soc/${ro.boot.bootdevice} /dev/block/bootdevice
+    wait /dev/block/bootdevice/by-name/vendor
+    wait /dev/block/bootdevice/by-name/sec_efs
 
+    # --- /vendor y /efs montados ya (como en el sistema), solo lectura ---
+    mkdir /vendor 0755 root root
+    mount ext4 /dev/block/bootdevice/by-name/vendor /vendor ro
+    mkdir /mnt/vendor 0755 root root
+    mkdir /mnt/vendor/efs 0771 system system
+    mount ext4 /dev/block/bootdevice/by-name/sec_efs /mnt/vendor/efs nosuid nodev noatime ro
+
+    # --- permisos que usa el sistema para qseecom / ion ---
     chmod 0660 /dev/qseecom
     chown system drmrpc /dev/qseecom
     chmod 0664 /dev/ion
     chown system system /dev/ion
+    mkdir /dev/.secure_storage 0711 system system
+
+    # --- cadena de descifrado ---
+    start qseecomd
+    start time_daemon
+    start keymaster-4-0
+    start gatekeeper-1-0
 
 on init
     wait /dev/block/bootdevice/by-name/system
-    wait /dev/block/bootdevice/by-name/vendor
 
 service qseecomd /vendor/bin/qseecomd
     user root
@@ -31,36 +47,29 @@ service time_daemon /vendor/bin/time_daemon
     setenv LD_LIBRARY_PATH /vendor/lib64:/vendor/lib:/system/lib64:/system/lib
     seclabel u:r:recovery:s0
 
-service gatekeeper-1-0 /vendor/bin/hw/android.hardware.gatekeeper@1.0-service
+service keymaster-4-0 /vendor/bin/hw/android.hardware.keymaster@4.0-service
+    interface android.hardware.keymaster@4.0::IKeymasterDevice default
     user root
     group root
     disabled
-    setenv LD_LIBRARY_PATH /vendor/lib64:/vendor/lib:/system/lib64:/system/lib
+    setenv LD_LIBRARY_PATH /vendor/lib64:/vendor/lib64/hw:/vendor/lib:/system/lib64:/system/lib
     seclabel u:r:recovery:s0
 
-service keymaster-4-0 /vendor/bin/hw/android.hardware.keymaster@4.0-service
+service keymaster-sb-4-0 /vendor/bin/hw/android.hardware.keymaster@4.0-strongbox-service-qti
+    interface android.hardware.keymaster@4.0::IKeymasterDevice strongbox
     user root
     group root
     disabled
-    setenv LD_LIBRARY_PATH /vendor/lib64:/vendor/lib:/system/lib64:/system/lib
+    setenv LD_LIBRARY_PATH /vendor/lib64:/vendor/lib64/hw:/vendor/lib:/system/lib64:/system/lib
+    seclabel u:r:recovery:s0
+
+service gatekeeper-1-0 /vendor/bin/hw/android.hardware.gatekeeper@1.0-service
+    interface android.hardware.gatekeeper@1.0::IGatekeeper default
+    user root
+    group root
+    disabled
+    setenv LD_LIBRARY_PATH /vendor/lib64:/vendor/lib64/hw:/vendor/lib:/system/lib64:/system/lib
     seclabel u:r:recovery:s0
 
 on boot
     setprop sys.usb.config adb
-
-# Mismos disparadores que usaba tu TWRP funcional
-on property:crypto.ready=0
-    stop qseecomd
-    stop keymaster-4-0
-    stop gatekeeper-1-0
-
-on property:crypto.ready=1
-    start qseecomd
-    start time_daemon
-
-on property:crypto.ready=1 && property:vendor.sys.listeners.registered=true
-    start keymaster-4-0
-    start gatekeeper-1-0
-
-on property:sys.usb.config=mtp,adb
-    restart time_daemon
