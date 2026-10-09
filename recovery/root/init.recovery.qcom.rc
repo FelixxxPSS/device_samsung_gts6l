@@ -1,5 +1,16 @@
-# Version minima: solo activa adb al arrancar.
-# El script completo de tu TWRP (servicios de descifrado qseecomd/keymaster/gatekeeper,
-# rutas /sbin y ANDROID_ROOT de Android 9) esta guardado en extras/ para adaptarlo mas adelante.
+# Version minima basada en el init.recovery.qcom.rc del recovery STOCK (Android 12).
+# - Crea /dev/block/bootdevice (sin esto no existen las rutas /dev/block/bootdevice/by-name/*
+#   y no monta ninguna particion).
+# - Activa adb al arrancar.
+# El script completo de tu TWRP (descifrado) esta en extras/ para adaptarlo mas adelante.
+
+on fs
+    wait /dev/block/platform/soc/${ro.boot.bootdevice}
+    symlink /dev/block/platform/soc/${ro.boot.bootdevice} /dev/block/bootdevice
+
+on init
+    wait /dev/block/bootdevice/by-name/system
+    wait /dev/block/bootdevice/by-name/vendor
+
 on boot
     setprop sys.usb.config adb
