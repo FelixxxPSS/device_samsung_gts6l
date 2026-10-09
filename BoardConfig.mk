@@ -76,7 +76,10 @@ VENDOR_SECURITY_PATCH := 2099-12-31
 
 # --- TWRP (valores tomados de tu BoardConfig funcional) ---
 # Tactil sec_touchscreen: X 0-1599, Y 0-2559 => panel vertical 1600x2560.
-# Tu TWRP usa TW_ROTATION := 270; aqui NO se activa a proposito (ver nota abajo).
+# Igual que tu TWRP funcional: el fb es horizontal (2560x1600) y el tactil vertical (1600x2560).
+# logcat/logd dentro del recovery (para depurar el descifrado)
+TWRP_INCLUDE_LOGCAT := true
+TARGET_USES_LOGD := true
 TW_THEME := portrait_hdpi
 TW_ROTATION := 270
 TW_INPUT_BLACKLIST := "hbtp_vm"
