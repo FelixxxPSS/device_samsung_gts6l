@@ -1,16 +1,66 @@
-# Version minima basada en el init.recovery.qcom.rc del recovery STOCK (Android 12).
-# - Crea /dev/block/bootdevice (sin esto no existen las rutas /dev/block/bootdevice/by-name/*
-#   y no monta ninguna particion).
-# - Activa adb al arrancar.
-# El script completo de tu TWRP (descifrado) esta en extras/ para adaptarlo mas adelante.
+# init.recovery.qcom.rc - gts6l (SM-T865), recovery 12.1
+# 1) symlink /dev/block/bootdevice (sin esto no montan las particiones)
+# 2) servicios de descifrado lanzados desde /vendor (qseecomd, keymaster 4.0, gatekeeper, time_daemon)
+# 3) adb al arrancar
+# hwservicemanager / servicemanager / keystore2 ya los define el propio sistema del recovery.
 
 on fs
     wait /dev/block/platform/soc/${ro.boot.bootdevice}
     symlink /dev/block/platform/soc/${ro.boot.bootdevice} /dev/block/bootdevice
 
+    chmod 0660 /dev/qseecom
+    chown system drmrpc /dev/qseecom
+    chmod 0664 /dev/ion
+    chown system system /dev/ion
+
 on init
     wait /dev/block/bootdevice/by-name/system
     wait /dev/block/bootdevice/by-name/vendor
 
+service qseecomd /vendor/bin/qseecomd
+    user root
+    group root
+    disabled
+    setenv LD_LIBRARY_PATH /vendor/lib64:/vendor/lib:/system/lib64:/system/lib
+    seclabel u:r:recovery:s0
+
+service time_daemon /vendor/bin/time_daemon
+    user root
+    group root
+    disabled
+    setenv LD_LIBRARY_PATH /vendor/lib64:/vendor/lib:/system/lib64:/system/lib
+    seclabel u:r:recovery:s0
+
+service gatekeeper-1-0 /vendor/bin/hw/android.hardware.gatekeeper@1.0-service
+    user root
+    group root
+    disabled
+    setenv LD_LIBRARY_PATH /vendor/lib64:/vendor/lib:/system/lib64:/system/lib
+    seclabel u:r:recovery:s0
+
+service keymaster-4-0 /vendor/bin/hw/android.hardware.keymaster@4.0-service
+    user root
+    group root
+    disabled
+    setenv LD_LIBRARY_PATH /vendor/lib64:/vendor/lib:/system/lib64:/system/lib
+    seclabel u:r:recovery:s0
+
 on boot
     setprop sys.usb.config adb
+
+# Mismos disparadores que usaba tu TWRP funcional
+on property:crypto.ready=0
+    stop qseecomd
+    stop keymaster-4-0
+    stop gatekeeper-1-0
+
+on property:crypto.ready=1
+    start qseecomd
+    start time_daemon
+
+on property:crypto.ready=1 && property:vendor.sys.listeners.registered=true
+    start keymaster-4-0
+    start gatekeeper-1-0
+
+on property:sys.usb.config=mtp,adb
+    restart time_daemon
