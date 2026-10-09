@@ -9,6 +9,7 @@ on fs
     symlink /dev/block/platform/soc/${ro.boot.bootdevice} /dev/block/bootdevice
     wait /dev/block/bootdevice/by-name/vendor
     wait /dev/block/bootdevice/by-name/sec_efs
+    wait /dev/block/bootdevice/by-name/apnhlos
 
     # --- /vendor y /efs montados ya (como en el sistema), solo lectura ---
     mkdir /vendor 0755 root root
@@ -16,6 +17,10 @@ on fs
     mkdir /mnt/vendor 0755 root root
     mkdir /mnt/vendor/efs 0771 system system
     mount ext4 /dev/block/bootdevice/by-name/sec_efs /mnt/vendor/efs nosuid nodev noatime ro
+
+    # --- firmware (apnhlos): qseecomd carga de aqui las apps de TrustZone (keymaster...) ---
+    # el sistema lo monta en /vendor/firmware_mnt (cmdline: firmware_class.path=/vendor/firmware_mnt/image)
+    mount vfat /dev/block/bootdevice/by-name/apnhlos /vendor/firmware_mnt ro nosuid nodev noexec shortname=lower
 
     # --- permisos que usa el sistema para qseecom / ion ---
     chmod 0660 /dev/qseecom
@@ -25,6 +30,7 @@ on fs
     mkdir /dev/.secure_storage 0711 system system
 
     # --- cadena de descifrado ---
+    wait /dev/qseecom
     start qseecomd
     start time_daemon
     start keymaster-4-0
