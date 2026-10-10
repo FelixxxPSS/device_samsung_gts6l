@@ -87,6 +87,10 @@ TW_EXCLUDE_DEFAULT_USB_INIT := true
 TW_BRIGHTNESS_PATH := "/sys/class/backlight/panel0-backlight/brightness"
 TW_MAX_BRIGHTNESS := 255
 TW_DEFAULT_BRIGHTNESS := 120
+
+# IHealth@2.0 no existe en este recovery (confirmado en dmesg): sin esto
+# TWRP/OrangeFox muestran 0%/100% falsos. Fuerza la lectura directa del kernel.
+TW_USE_LEGACY_BATTERY_SERVICES := true
 TW_NO_REBOOT_BOOTLOADER := true
 TW_HAS_DOWNLOAD_MODE := true
 TW_EXCLUDE_TWRPAPP := true
