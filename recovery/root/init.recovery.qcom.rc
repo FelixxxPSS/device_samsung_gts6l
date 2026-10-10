@@ -29,12 +29,11 @@ on fs
     chown system system /dev/ion
     mkdir /dev/.secure_storage 0711 system system
 
-    # --- cadena de descifrado ---
-    wait /dev/qseecom
-    start qseecomd
-    start time_daemon
-    start keymaster-4-0
-    start gatekeeper-1-0
+    # --- cadena de descifrado: YA NO SE ARRANCA SOLA ---
+    # /data no esta cifrado (multidisabler), asi que estos servicios no cumplen
+    # ninguna funcion y solo dejaban /vendor "busy" (no se podia desmontar).
+    # Las definiciones de servicio siguen abajo; para usarlos a mano:
+    #   start qseecomd; start time_daemon; start keymaster-4-0; start gatekeeper-1-0
 
 on init
     wait /dev/block/bootdevice/by-name/system
