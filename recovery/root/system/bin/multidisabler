@@ -195,6 +195,14 @@ disable_fbe
 disable_fde
 disable_recovery_restoration
 
+echo " - Stopping decryption-chain services (if running)..."
+stop qseecomd 2>/dev/null
+stop time_daemon 2>/dev/null
+stop keymaster-4-0 2>/dev/null
+stop keymaster-sb-4-0 2>/dev/null
+stop gatekeeper-1-0 2>/dev/null
+sleep 1
+
 echo " - Unmounting /vendor..."
 umount /vendor
 echo " - Unmounting $ANDROID_ROOT..."
