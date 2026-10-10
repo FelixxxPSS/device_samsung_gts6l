@@ -39,6 +39,10 @@ on fs
 on init
     wait /dev/block/bootdevice/by-name/system
 
+    # OrangeFox/TWRP solo intentan descifrar /data si ven estas propiedades (en el sistema las pone vold)
+    setprop ro.crypto.state encrypted
+    setprop ro.crypto.type file
+
 service qseecomd /vendor/bin/qseecomd
     user root
     group root
