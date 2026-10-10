@@ -1,19 +1,6 @@
 name: OrangeFox - Build
 
-# Basado en OrangeFox-Action-Builder. Creditos:
-# https://github.com/TeamWin  https://gitlab.com/OrangeFox
-# https://github.com/azwhikaru (plantilla original)
-#
-# VERSION "TODO EN UN REPO": este workflow vive DENTRO del repo del device tree
-# (.github/workflows/OrangeFox-Compile.yml). Compila usando los archivos de este mismo repo.
-#
-# Cambios respecto al original:
-#  - El device tree es el propio repo (no se clona otro)
-#  - Valores por defecto = Galaxy Tab S6 LTE (gts6l)
-#  - Comprueba el arbol antes de compilar (falla con un mensaje claro)
-#  - Sin "make clean" (el runner siempre empieza limpio)
-#  - Guarda el log de compilacion y lo sube como artefacto si algo falla
-#  - Genera un .tar para Odin (Samsung) y lo adjunta al Release
+# OrangeFox-Action-Builder
 
 on:
   workflow_dispatch:
